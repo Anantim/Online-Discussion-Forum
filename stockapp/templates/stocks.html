@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- Required Meta Tags -->
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+
+    <!-- Bootstrap 4.5, CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+	
+    {% if title %}
+        <title>{{ title }}</title>
+    {% else %}
+        <title>Flask Stock App</title>
+	{% endif %}
+	
+	<style>
+		table {
+			display: flex;
+			justify-content: center;
+			margin-top: 45px;
+			text-align: center;
+		}
+
+		th {
+			background-color: #17a2b8;
+			height: 40px;
+			font-weight: normal;
+			color: white;
+			border: 2px solid black;
+		}
+
+		th:hover {
+			background-color: rgb(81, 180, 0);
+		}
+
+		td {
+			background-color: white;
+			border: 2px solid black;
+			border-collapse: collapse;
+			height: 40px;
+			/* width: 250px; */
+		}
+
+		#stockname {
+			width: 500px;
+		}
+
+		#high {
+			width: 200px;
+		}
+
+		#low {
+			width: 200px;
+		}
+
+		#lastprice {
+			width: 150px;
+		}
+
+		#change {
+			color: rgb(81, 180, 0);
+			font-weight: 600;
+			width: 150px;
+		}
+
+		#volume {
+			width: 200px;
+		}
+
+		p {
+			display: flex;
+			justify-content: center;
+			margin-top: 50px;
+			text-align: center;
+		}
+	</style>
+</head>
+
+<body>
+	<header class="site-header">
+		<nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+			<div class="container">
+				<a class="navbar-brand mr-4" href="/">Flask Stock App</a>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarToggle">
+				<div class="navbar-nav mr-auto">
+					<a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
+					<a class="nav-item nav-link" href="{{ url_for('stockinfo') }}">Basic Info</a>
+					<a class="nav-item nav-link" href="{{ url_for('news') }}">News</a>
+					<a class="nav-item nav-link" href="{{ url_for('stocks') }}">Stocks</a>
+				</div>
+				<!-- Navbar Right Side -->
+				<div class="navbar-nav">
+					{% if current_user.is_authenticated %}
+						<a class="nav-item nav-link" href="{{ url_for('stockpred') }}">Stock Prediction</a>
+						<a class="nav-item nav-link" href="{{ url_for('indices') }}">Indices</a>
+						<a class="nav-item nav-link" href="{{ url_for('new_post') }}">New Post</a>
+						<a class="nav-item nav-link" href="{{ url_for('account') }}">Account</a>
+						<a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+					{% else %}
+						<a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a>
+						<a class="nav-item nav-link" href="{{ url_for('register') }}">Register</a>
+					{% endif %}
+				</div>
+				</div>
+			</div>
+		</nav>
+	</header>
+
+	<main role="main" class="container">
+		<div class="row">
+			<div class="col-md-8">
+				{% with messages = get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+						{% for category, message in messages %}
+							<div class="alert alert-{{ category }}">
+								{{ message }}
+							</div>
+						{% endfor %}
+					{% endif %}
+				{% endwith %}
+			</div>
+			<!-- <div class="col-md-4">
+				<div class="content-section">
+				<h4>Sidebar</h4>
+				<p class="text-muted">You Can Put Any Information Here.
+					<ul class="list-group">
+					<li class="list-group-item list-group-item-light">Latest Posts</li>
+					<li class="list-group-item list-group-item-light">Announcements</li>
+					<li class="list-group-item list-group-item-light">Calendars</li>
+					<li class="list-group-item list-group-item-light">etc</li>
+					</ul>
+				</p>
+				</div>
+			</div> -->
+		</div>
+	</main>
+
+	{% block content %}		<!-- The "content" after the "block" keyword is a name, it can be changed to anything -->
+		<table>	
+			<tr>
+				<th> Stock Name </th>
+				<th> Today's High </th>
+				<th> Today's Low </th>
+				<th> Last Price </th>
+				<th> % Change </th>
+				<th> Volume </th>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Reliance Industries Limited (RIL) </td>
+				<td id="high"> 1,965.90 </td>
+				<td id="low"> 1,931.00 </td>
+				<td id="lastprice"> 1,954.30 </td>
+				<td id="change"> 1.27 </td>
+				<td id="volume"> 593339 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> State Bank Of India (SBI) </td>
+				<td id="high"> 248.90 </td>
+				<td id="low"> 244.25 </td>
+				<td id="lastprice"> 248.05 </td>
+				<td id="change"> 1.53 </td>
+				<td id="volume"> 2940787 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Infosys Limited (INFY) </td>
+				<td id="high"> 1,139.70 </td>
+				<td id="low"> 1,105.55 </td>
+				<td id="lastprice"> 1,137.25 </td>
+				<td id="change"> 3.33 </td>
+				<td id="volume"> 571933 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Bharti Airtel Limited (BHARTIARTL) </td>
+				<td id="high"> 482.20 </td>
+				<td id="low"> 460.55 </td>
+				<td id="lastprice"> 479.35 </td>
+				<td id="change"> 3.46 </td>
+				<td id="volume"> 1193152 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Bajaj Finance Limited (BAJFINANCE) </td>
+				<td id="high"> 4,949.90 </td>
+				<td id="low"> 4,824.20 </td>
+				<td id="lastprice"> 4,857.20 </td>
+				<td id="change" style="color: rgb(201, 13, 22); font-weight: 600;"> 0.94 </td>
+				<td id="volume"> 115596 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Tata Steel (TATASTEEL) </td>
+				<td id="high"> 590.50 </td>
+				<td id="low"> 577.00 </td>
+				<td id="lastprice"> 585.55 </td>
+				<td id="change"> 1.33 </td>
+				<td id="volume"> 635845 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Axis Bank Limited (AXISBANK) </td>
+				<td id="high"> 611.75 </td>
+				<td id="low"> 596.25 </td>
+				<td id="lastprice"> 603.45 </td>
+				<td id="change"> 0.22 </td>
+				<td id="volume"> 521910 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Sun Pharmaceuticals Industries Limited (SUNPHARMA) </td>
+				<td id="high"> 542.45 </td>
+				<td id="low"> 514.75 </td>
+				<td id="lastprice"> 539.75 </td>
+				<td id="change"> 5.51 </td>
+				<td id="volume"> 555292 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Oil and Natural Gas Corporation Limited (ONGC) </td>
+				<td id="high"> 82.00 </td>
+				<td id="low"> 77.00 </td>
+				<td id="lastprice"> 81.50 </td>
+				<td id="change"> 3.82 </td>
+				<td id="volume"> 3587260 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Kotak Mahindra Bank (KOTAK) </td>
+				<td id="high"> 1,934.00 </td>
+				<td id="low"> 1,864.80 </td>
+				<td id="lastprice"> 1,874.95 </td>
+				<td id="change" style="color: rgb(201, 13, 22); font-weight: 600;"> 1.40 </td>
+				<td id="volume"> 145360 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Maruti Suzuki India Limited (MARUTI) </td>
+				<td id="high"> 7,120.95 </td>
+				<td id="low"> 6,981.10 </td>
+				<td id="lastprice"> 7,099.10 </td>
+				<td id="change"> 1.03 </td>
+				<td id="volume"> 22165 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Titan Company Limited (TITAN) </td>
+				<td id="high"> 1,385.00 </td>
+				<td id="low"> 1,335.00 </td>
+				<td id="lastprice"> 1,341.45 </td>
+				<td id="change" style="color: rgb(201, 13, 22); font-weight: 600;"> 1.21 </td>
+				<td id="volume"> 99827 </td>
+			</tr>
+	{% endblock content %}
+
+    <!-- Bootstrap 4.5, JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- Required Meta Tags -->
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+	
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+	
+	<!-- Bootstrap 4.5, CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+
+	{% if title %}
+        <title>{{ title }}</title>
+    {% else %}
+        <title>Flask Stock App</title>
+	{% endif %}
+	
+	<style>
+		table {
+			display: flex;
+			justify-content: center;
+			margin-top: 0px;
+			text-align: center;
+		}
+
+		th {
+			background-color: #17a2b8;
+			height: 40px;
+			font-weight: normal;
+			color: white;
+			border: 2px solid black;
+		}
+
+		th:hover {
+			background-color: rgb(81, 180, 0);
+		}
+
+		td {
+			background-color: white;
+			border: 2px solid black;
+			border-collapse: collapse;
+			height: 40px;
+			/* width: 250px; */
+		}
+
+		#stockname {
+			width: 500px;
+		}
+
+		#high {
+			width: 150px;
+		}
+
+		#low {
+			width: 150px;
+		}
+
+		#lastprice {
+			width: 150px;
+		}
+
+		#prevclose {
+			width: 150px;
+		}
+
+		#gain {
+			color: rgb(81, 180, 0);
+			font-weight: 600;
+			width: 150px;
+		}
+
+		#volume {
+			width: 150px;
+		}
+
+		p {
+			display: flex;
+			justify-content: center;
+			margin-top: 50px;
+			text-align: center;
+		}
+	</style>
+</head>
+
+<body>
+	<header class="site-header">
+		<nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+			<div class="container">
+				<a class="navbar-brand mr-4" href="/">Flask Stock App</a>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarToggle">
+				<div class="navbar-nav mr-auto">
+					<a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
+					<a class="nav-item nav-link" href="{{ url_for('stockinfo') }}">Basic Info</a>
+					<a class="nav-item nav-link" href="{{ url_for('news') }}">News</a>
+					<a class="nav-item nav-link" href="{{ url_for('stocks') }}">Stocks</a>
+				</div>
+				<!-- Navbar Right Side -->
+				<div class="navbar-nav">
+					{% if current_user.is_authenticated %}
+						<a class="nav-item nav-link" href="{{ url_for('stockpred') }}">Stock Prediction</a>
+						<a class="nav-item nav-link" href="{{ url_for('indices') }}">Indices</a>
+						<a class="nav-item nav-link" href="{{ url_for('new_post') }}">New Post</a>
+						<a class="nav-item nav-link" href="{{ url_for('account') }}">Account</a>
+						<a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+					{% else %}
+						<a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a>
+						<a class="nav-item nav-link" href="{{ url_for('register') }}">Register</a>
+					{% endif %}
+				</div>
+				</div>
+			</div>
+		</nav>
+	</header>
+
+	<main role="main" class="container">
+		<div class="row">
+			<div class="col-md-8">
+				{% with messages = get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+						{% for category, message in messages %}
+							<div class="alert alert-{{ category }}">
+								{{ message }}
+							</div>
+						{% endfor %}
+					{% endif %}
+				{% endwith %}
+				{% block content %}		<!-- The "content" after the "block" keyword is a name, it can be gaind to anything -->
+				<div class="container" style="position: relative; height:40vh; width:80vw">
+					<br>
+					<h3> NIFTY 50 </h3>
+					<div class="row">
+						<div class="col-12">
+							<div class="card">
+								<div class="card-body">
+									<canvas id="canvas1"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+				
+				<div class="container" style="position: relative; height:40vh; width:80vw">
+					<h3> SENSEX </h3>
+					<div class="row">
+						<div class="col-12">
+							<div class="card">
+								<div class="card-body">
+									<canvas id="canvas2"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+					<br><br>
+				</div>
+				<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+				<!--suppress JSUnresolvedLibraryURL -->
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+				<!--suppress JSUnresolvedLibraryURL -->
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+				<!--suppress JSUnresolvedLibraryURL -->
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+				<script>
+					$(document).ready(function () {
+						const config = {
+							type: 'line',
+							data: {
+								labels: [],
+								datasets: [{
+									label: "Extrapolated Nifty 50 Dataset",
+									backgroundColor: 'rgba(81, 180, 0, 0.2)',
+									borderColor: 'rgb(81, 180, 0)',
+									data: [],
+									fill: true
+								}],
+							},
+							options: {
+								responsive: true,
+								title: {
+									display: true,
+									text: 'Real-Time Data From The Server'
+								},
+								tooltips: {
+									mode: 'index',
+									intersect: false,
+								},
+								hover: {
+									mode: 'nearest',
+									intersect: true
+								},
+								scales: {
+									xAxes: [{
+										display: true,
+										scaleLabel: {
+											display: true,
+											labelString: 'Time'
+										}
+									}],
+									yAxes: [{
+										display: true,
+										scaleLabel: {
+											display: true,
+											labelString: 'Value'
+										},
+										ticks: {
+											min: 12900,
+											max: 13100,
+											stepSize: 50
+										}
+									}]
+								}
+							}
+						};
+				
+						const context = document.getElementById('canvas1').getContext('2d');
+				
+						const lineChart = new Chart(context, config);
+				
+						const source = new EventSource("/chart-data-nifty");
+				
+						source.onmessage = function (event) {
+							const data = JSON.parse(event.data);
+							if (config.data.labels.length === 20) {
+								config.data.labels.shift();
+								config.data.datasets[0].data.shift();
+							}
+							config.data.labels.push(data.time);
+							config.data.datasets[0].data.push(data.value);
+							lineChart.update();
+						}
+					});
+				</script>
+				
+				<script>
+					$(document).ready(function () {
+						const config = {
+							type: 'line',
+							data: {
+								labels: [],
+								datasets: [{
+									label: "Extrapolated Sensex Dataset",
+									backgroundColor: 'rgba(81, 180, 0, 0.2)',
+									borderColor: 'rgb(81, 180, 0)',
+									data: [],
+									fill: true
+								}],
+							},
+							options: {
+								responsive: true,
+								title: {
+									display: true,
+									text: 'Real-Time Data From The Server'
+								},
+								tooltips: {
+									mode: 'index',
+									intersect: false,
+								},
+								hover: {
+									mode: 'nearest',
+									intersect: true
+								},
+								scales: {
+									xAxes: [{
+										display: true,
+										scaleLabel: {
+											display: true,
+											labelString: 'Time'
+										}
+									}],
+									yAxes: [{
+										display: true,
+										scaleLabel: {
+											display: true,
+											labelString: 'Value'
+										},
+										ticks: {
+											min: 44000,
+											max: 46000,
+											stepSize: 300
+										}
+									}]
+								}
+							}
+						};
+				
+						const context = document.getElementById('canvas2').getContext('2d');
+				
+						const lineChart = new Chart(context, config);
+				
+						const source = new EventSource("/chart-data-sensex");
+				
+						source.onmessage = function (event) {
+							const data = JSON.parse(event.data);
+							if (config.data.labels.length === 20) {
+								config.data.labels.shift();
+								config.data.datasets[0].data.shift();
+							}
+							config.data.labels.push(data.time);
+							config.data.datasets[0].data.push(data.value);
+							lineChart.update();
+						}
+					});
+				</script>
+				{% endblock content %}
+			</div>
+			<!-- <div class="col-md-4">
+				<div class="content-section">
+				<h4>Our Sidebar</h4>
+				<p class="text-muted">You can put any information here you'd like.
+					<ul class="list-group">
+					<li class="list-group-item list-group-item-light">Latest Posts</li>
+					<li class="list-group-item list-group-item-light">Announcements</li>
+					<li class="list-group-item list-group-item-light">Calendars</li>
+					<li class="list-group-item list-group-item-light">etc</li>
+					</ul>
+				</p>
+				</div>
+			</div> -->
+		</div>
+	</main>
+
+	<!-- <div class="container" style="margin-left: 205px;"> -->
+		<h3 style="margin-left: 56px;"> NIFTY 50 Top Gainers </h3>
+		<table>
+			<tr>
+				<th> Stock Name </th>
+				<th> High </th>
+				<th> Low </th>
+				<th> Last Price </th>
+				<th> Prev Close </th>
+				<th> % Gain </th>
+				<th> Volume </th>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> GAIL India Limited (GAIL) </td>
+				<td id="high"> 112.00 </td>
+				<td id="low"> 103.10 </td>
+				<td id="lastprice"> 110.70 </td>
+				<td id="prevclose"> 102.65 </td>
+				<td id="gain"> 7.84 </td>
+				<td id="volume"> 85684453 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Sun Pharmaceuticals Industries Limited (SUNPHARMA) </td>
+				<td id="high"> 542.75 </td>
+				<td id="low"> 512.65 </td>
+				<td id="lastprice"> 539.35 </td>
+				<td id="prevclose"> 511.65 </td>
+				<td id="gain"> 5.41 </td>
+				<td id="volume"> 25388623 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> IndusInd Bank Limited (INDUSINDBK) </td>
+				<td id="high"> 900.00 </td>
+				<td id="low"> 858.10 </td>
+				<td id="lastprice"> 895.50 </td>
+				<td id="prevclose"> 857.65 </td>
+				<td id="gain"> 4.41 </td>
+				<td id="volume"> 14690547 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Oil and Natural Gas Corporation Limited (ONGC) </td>
+				<td id="high"> 82.00 </td>
+				<td id="low"> 77.00 </td>
+				<td id="lastprice"> 81.00 </td>
+				<td id="prevclose"> 81.50 </td>
+				<td id="gain"> 2.54 </td>
+				<td id="volume"> 3587260 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> UPL Limited (UPL) </td>
+				<td id="high"> 434.20 </td>
+				<td id="low"> 418.00 </td>
+				<td id="lastprice"> 433.05 </td>
+				<td id="prevclose"> 417.70 </td>
+				<td id="gain"> 3.67 </td>
+				<td id="volume"> 14928450 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Grasim Industries Limited (GRASIM) </td>
+				<td id="high"> 910.70 </td>
+				<td id="low"> 862.15 </td>
+				<td id="lastprice"> 907.80 </td>
+				<td id="prevclose"> 875.75 </td>
+				<td id="gain"> 3.66 </td>
+				<td id="volume"> 4110405 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Bharti Airtel Limited (BHARTIARTL) </td>
+				<td id="high"> 482.20 </td>
+				<td id="low"> 460.55 </td>
+				<td id="lastprice"> 479.45 </td>
+				<td id="prevclose"> 463.25 </td>
+				<td id="gain"> 3.50 </td>
+				<td id="volume"> 18193356 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Tech Mahindra Limited (TECHM) </td>
+				<td id="high"> 914.15 </td>
+				<td id="low"> 871.65 </td>
+				<td id="lastprice"> 907.30 </td>
+				<td id="prevclose"> 876.85 </td>
+				<td id="gain"> 3.47 </td>
+				<td id="volume"> 5821698 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Infosys Limited (INFY) </td>
+				<td id="high"> 1,139.70 </td>
+				<td id="low"> 1,105.55 </td>
+				<td id="lastprice"> 1137.80 </td>
+				<td id="prevclose"> 1,137.25 </td>
+				<td id="gain"> 3.83 </td>
+				<td id="volume"> 571933 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Adani Ports and Special Economic Zone Limited (ADANIPORTS) </td>
+				<td id="high"> 426.00 </td>
+				<td id="low"> 412.00 </td>
+				<td id="lastprice"> 423.80 </td>
+				<td id="prevclose"> 411.55 </td>
+				<td id="gain"> 2.98 </td>
+				<td id="volume"> 9170159 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> ICICI Bank Limited (ICICIBANK) </td>
+				<td id="high"> 488.50 </td>
+				<td id="low"> 474.30 </td>
+				<td id="lastprice"> 485.10 </td>
+				<td id="prevclose"> 473.35 </td>
+				<td id="gain"> 2.48 </td>
+				<td id="volume"> 20120049 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Shree Cements Limited (SHREECEM) </td>
+				<td id="high"> 25,655.50 </td>
+				<td id="low"> 24,549.40 </td>
+				<td id="lastprice"> 24,908.40 </td>
+				<td id="prevclose"> 24,306.35 </td>
+				<td id="gain"> 2.48 </td>
+				<td id="volume"> 95268 </td>
+			</tr>
+		</table>
+	<!-- </div> -->
+	<br><br><br>
+
+	<!-- <div class="container" style="margin-left: 205px;"> -->
+		<h3 style="margin-left: 56px;"> SENSEX Top Gainers </h3>
+		<table>
+			<tr>
+				<th> Stock Name </th>
+				<th> High </th>
+				<th> Low </th>
+				<th> Last Price </th>
+				<th> Prev Close </th>
+				<th> % Gain </th>
+				<th> Volume </th>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Sun Pharmaceuticals Industries Limited (SUNPHARMA) </td>
+				<td id="high"> 542.45 </td>
+				<td id="low"> 514.75 </td>
+				<td id="lastprice"> 539.75 </td>
+				<td id="prevclose"> 511.55 </td>
+				<td id="gain"> 5.51 </td>
+				<td id="volume"> 555292 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> IndusInd Bank Limited (INDUSINDBK) </td>
+				<td id="high"> 900.00 </td>
+				<td id="low"> 857.70 </td>
+				<td id="lastprice"> 895.10 </td>
+				<td id="prevclose"> 857.65 </td>
+				<td id="gain"> 4.37 </td>
+				<td id="volume"> 773812 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Tech Mahindra Limited (TECHM) </td>
+				<td id="high"> 914.20 </td>
+				<td id="low"> 872.60 </td>
+				<td id="lastprice"> 910.00 </td>
+				<td id="prevclose"> 876.15 </td>
+				<td id="gain"> 3.86 </td>
+				<td id="volume"> 133575 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Oil and Natural Gas Corporation Limited (ONGC) </td>
+				<td id="high"> 82.00 </td>
+				<td id="low"> 77.00 </td>
+				<td id="lastprice"> 81.50 </td>
+				<td id="prevclose"> 78.50 </td>
+				<td id="gain"> 3.82 </td>
+				<td id="volume"> 3587260 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Bharti Airtel Limited (BHARTARTL) </td>
+				<td id="high"> 482.20 </td>
+				<td id="low"> 460.55 </td>
+				<td id="lastprice"> 479.35 </td>
+				<td id="prevclose"> 463.30 </td>
+				<td id="gain"> 3.46 </td>
+				<td id="volume"> 1193152 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Infosys Limited (INFY) </td>
+				<td id="high"> 1,139.70 </td>
+				<td id="low"> 1,105.55 </td>
+				<td id="lastprice"> 1,137.25 </td>
+				<td id="prevclose"> 1,100.55 </td>
+				<td id="gain"> 3.33 </td>
+				<td id="volume"> 571933 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> ICICI Bank Limited (ICICIBANK) </td>
+				<td id="high"> 488.50 </td>
+				<td id="low"> 474.15 </td>
+				<td id="lastprice"> 485.25 </td>
+				<td id="prevclose"> 472.80 </td>
+				<td id="gain"> 2.63 </td>
+				<td id="volume"> 525524 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Bajaj Auto Limited (BAJAJ-AUTO) </td>
+				<td id="high"> 3,248.95 </td>
+				<td id="low"> 3,164.10 </td>
+				<td id="lastprice"> 3,244.55 </td>
+				<td id="prevclose"> 3,172.65 </td>
+				<td id="gain"> 2.27 </td>
+				<td id="volume"> 23727 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> UltraTechCement Limited (ULTRACEMCO) </td>
+				<td id="high"> 4,936.00 </td>
+				<td id="low"> 4,802.75 </td>
+				<td id="lastprice"> 4,909.80 </td>
+				<td id="prevclose"> 4,802.75 </td>
+				<td id="gain"> 2.23 </td>
+				<td id="volume"> 26939 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Housing Development Finance Corporation Limited (HDFC) </td>
+				<td id="high"> 2,323.35 </td>
+				<td id="low"> 2,218.15 </td>
+				<td id="lastprice"> 2,304.95 </td>
+				<td id="prevclose"> 2,257.55 </td>
+				<td id="gain"> 2.10 </td>
+				<td id="volume"> 240036 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Tata Consultancy Services (TCS) </td>
+				<td id="high"> 2,735.00 </td>
+				<td id="low"> 2,625.10 </td>
+				<td id="lastprice"> 2,726.95 </td>
+				<td id="prevclose"> 2,679.15 </td>
+				<td id="gain"> 1.78 </td>
+				<td id="volume"> 90136 </td>
+			</tr>
+			<tr>
+				<td id="stockname" style="color: black; font-weight: 600;"> Mahindra and Mahindra Limited (M&M) </td>
+				<td id="high"> 736.60 </td>
+				<td id="low"> 708.15 </td>
+				<td id="lastprice"> 731.55 </td>
+				<td id="prevclose"> 720.05 </td>
+				<td id="gain"> 1.60 </td>
+				<td id="volume"> 157074 </td>
+			</tr>
+		</table>
+	<!-- </div> -->
+	<br><br><br>
+
+    <!-- Bootstrap 4.5, JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</body>
+</html>
